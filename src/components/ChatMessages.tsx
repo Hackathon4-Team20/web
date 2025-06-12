@@ -3,37 +3,37 @@ const messages = [
   {
     id: 1,
     sender: "customer",
-    content: "Hi, I have a problem with my recent order. The product I received doesn't match what I ordered.",
-    time: "10:25 AM",
-    avatar: "D",
+    content: "مرحبا، لدي مشكلة في طلبي الأخير. المنتج الذي استلمته لا يطابق ما طلبته.",
+    time: "10:25 ص",
+    avatar: "د",
     avatarColor: "bg-orange-500"
   },
   {
     id: 2,
     sender: "admin",
-    content: "Hello! I'm sorry to hear about the issue with your order. I'd be happy to help you resolve this. Can you please provide me with your order number?",
-    time: "10:26 AM"
+    content: "مرحبا! آسف لسماع هذه المشكلة مع طلبك. سأكون سعيدا لمساعدتك في حل هذا الأمر. هل يمكنك من فضلك تزويدي برقم طلبك؟",
+    time: "10:26 ص"
   },
   {
     id: 3,
     sender: "customer",
-    content: "Sure, my order number is #12345. I ordered a blue shirt but received a red one instead.",
-    time: "10:27 AM",
-    avatar: "D",
+    content: "بالطبع، رقم طلبي هو #12345. طلبت قميصا أزرق لكن استلمت قميصا أحمر بدلا من ذلك.",
+    time: "10:27 ص",
+    avatar: "د",
     avatarColor: "bg-orange-500"
   },
   {
     id: 4,
     sender: "admin",
-    content: "Thank you for providing the order details. I can see the issue in our system. We'll arrange for the correct blue shirt to be sent to you immediately, and you can keep the red shirt as our apology for the inconvenience.",
-    time: "10:29 AM"
+    content: "شكرا لك لتقديم تفاصيل الطلب. يمكنني رؤية المشكلة في نظامنا. سنرتب لإرسال القميص الأزرق الصحيح إليك على الفور، ويمكنك الاحتفاظ بالقميص الأحمر كاعتذار منا عن الإزعاج.",
+    time: "10:29 ص"
   },
   {
     id: 5,
     sender: "customer",
-    content: "That's very generous, thank you! When can I expect the correct item to arrive?",
-    time: "10:30 AM",
-    avatar: "D",
+    content: "هذا كريم جدا منكم، شكرا لكم! متى يمكنني توقع وصول العنصر الصحيح؟",
+    time: "10:30 ص",
+    avatar: "د",
     avatarColor: "bg-orange-500"
   }
 ];
@@ -44,30 +44,30 @@ const ChatMessages = () => {
       {messages.map((message) => (
         <div
           key={message.id}
-          className={`flex gap-3 ${message.sender === "admin" ? "justify-end" : ""}`}
+          className={`flex gap-3 ${message.sender === "admin" ? "justify-start" : "justify-end"}`}
         >
-          {message.sender === "customer" && (
-            <div className={`w-8 h-8 rounded-full ${message.avatarColor} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0`}>
-              {message.avatar}
+          {message.sender === "admin" && (
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-semibold flex-shrink-0">
+              م
             </div>
           )}
-          <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${message.sender === "admin" ? "order-first" : ""}`}>
+          <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${message.sender === "customer" ? "order-first" : ""}`}>
             <div
               className={`p-3 rounded-lg ${
-                message.sender === "admin"
-                  ? "bg-primary text-primary-foreground ml-auto"
+                message.sender === "customer"
+                  ? "bg-primary text-primary-foreground mr-auto"
                   : "bg-muted"
               }`}
             >
               <p className="text-sm">{message.content}</p>
             </div>
-            <p className={`text-xs text-muted-foreground mt-1 ${message.sender === "admin" ? "text-right" : ""}`}>
+            <p className={`text-xs text-muted-foreground mt-1 ${message.sender === "customer" ? "text-left" : "text-right"}`}>
               {message.time}
             </p>
           </div>
-          {message.sender === "admin" && (
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-semibold flex-shrink-0">
-              A
+          {message.sender === "customer" && (
+            <div className={`w-8 h-8 rounded-full ${message.avatarColor} flex items-center justify-center text-white text-sm font-semibold flex-shrink-0`}>
+              {message.avatar}
             </div>
           )}
         </div>

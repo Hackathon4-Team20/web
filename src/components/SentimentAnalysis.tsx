@@ -6,45 +6,45 @@ import { Badge } from "@/components/ui/badge";
 const SentimentAnalysis = () => {
   const overallSentiment = {
     score: 0.65,
-    label: "Positive",
+    label: "إيجابي",
     trend: "improving"
   };
 
   const messageAnalysis = [
     {
       id: 1,
-      message: "I have a problem with my recent order...",
+      message: "لدي مشكلة في طلبي الأخير...",
       sentiment: "negative",
       score: -0.4,
-      keywords: ["problem", "doesn't match"]
+      keywords: ["مشكلة", "لا يطابق"]
     },
     {
       id: 2,
-      message: "I'm sorry to hear about the issue...",
+      message: "آسف لسماع هذه المشكلة...",
       sentiment: "neutral",
       score: 0.1,
-      keywords: ["sorry", "help"]
+      keywords: ["آسف", "مساعدة"]
     },
     {
       id: 3,
-      message: "Sure, my order number is #12345...",
+      message: "بالطبع، رقم طلبي هو #12345...",
       sentiment: "neutral",
       score: 0.0,
-      keywords: ["order number"]
+      keywords: ["رقم الطلب"]
     },
     {
       id: 4,
-      message: "Thank you for providing the details...",
+      message: "شكرا لك لتقديم التفاصيل...",
       sentiment: "positive",
       score: 0.7,
-      keywords: ["thank you", "arrange", "apology"]
+      keywords: ["شكرا", "سنرتب", "اعتذار"]
     },
     {
       id: 5,
-      message: "That's very generous, thank you!",
+      message: "هذا كريم جدا منكم، شكرا!",
       sentiment: "positive",
       score: 0.8,
-      keywords: ["generous", "thank you"]
+      keywords: ["كريم", "شكرا"]
     }
   ];
 
@@ -70,30 +70,41 @@ const SentimentAnalysis = () => {
     }
   };
 
+  const getSentimentLabel = (sentiment: string) => {
+    switch (sentiment) {
+      case "positive":
+        return "إيجابي";
+      case "negative":
+        return "سلبي";
+      default:
+        return "محايد";
+    }
+  };
+
   return (
-    <div className="w-80 border-l border-border bg-card p-4 overflow-y-auto">
+    <div className="w-80 border-r border-border bg-card p-4 overflow-y-auto">
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-2">
+          <h2 className="font-semibold">تحليل المشاعر</h2>
           <AlertTriangle className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Sentiment Analysis</h2>
         </div>
 
         {/* Overall Sentiment */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Overall Conversation</CardTitle>
+            <CardTitle className="text-sm">إجمالي المحادثة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Sentiment</span>
               <Badge className={getSentimentColor(overallSentiment.label.toLowerCase())}>
                 {overallSentiment.label}
               </Badge>
+              <span className="text-sm text-muted-foreground">المشاعر</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Score</span>
               <span className="font-semibold">{overallSentiment.score}</span>
+              <span className="text-sm text-muted-foreground">النتيجة</span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
@@ -109,29 +120,29 @@ const SentimentAnalysis = () => {
         {/* Message-by-Message Analysis */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Message Analysis</CardTitle>
+            <CardTitle className="text-sm">تحليل الرسائل</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {messageAnalysis.map((analysis) => (
               <div key={analysis.id} className="space-y-2 p-3 bg-muted rounded-lg">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs text-muted-foreground truncate flex-1">
+                  {getSentimentIcon(analysis.sentiment)}
+                  <p className="text-xs text-muted-foreground truncate flex-1 text-right">
                     {analysis.message}
                   </p>
-                  {getSentimentIcon(analysis.sentiment)}
                 </div>
                 <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono">
+                    {analysis.score > 0 ? "+" : ""}{analysis.score}
+                  </span>
                   <Badge 
                     variant="outline" 
                     className={`text-xs ${getSentimentColor(analysis.sentiment)}`}
                   >
-                    {analysis.sentiment}
+                    {getSentimentLabel(analysis.sentiment)}
                   </Badge>
-                  <span className="text-xs font-mono">
-                    {analysis.score > 0 ? "+" : ""}{analysis.score}
-                  </span>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 justify-end">
                   {analysis.keywords.map((keyword, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {keyword}
@@ -146,20 +157,20 @@ const SentimentAnalysis = () => {
         {/* Quick Insights */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Quick Insights</CardTitle>
+            <CardTitle className="text-sm">نظرات سريعة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">تحسن رضا العملاء</span>
               <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span className="text-muted-foreground">Customer satisfaction improving</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">الحل قيد التنفيذ</span>
               <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span className="text-muted-foreground">Resolution in progress</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">كلمات مفتاحية: طلب، مشكلة، مساعدة</span>
               <div className="w-2 h-2 bg-orange-500 rounded-full" />
-              <span className="text-muted-foreground">Keywords: order, problem, help</span>
             </div>
           </CardContent>
         </Card>
