@@ -193,11 +193,11 @@ const AdminDashboard = () => {
                     <Line
                       type="monotone"
                       dataKey="positive"
-                      stroke="#82ca9d"
+                      stroke="#22c55e"
                       activeDot={{ r: 8 }}
                     />
-                    <Line type="monotone" dataKey="negative" stroke="#8884d8" />
-                    <Line type="monotone" dataKey="neutral" stroke="#8b008b" />
+                    <Line type="monotone" dataKey="negative" stroke="#ef4444" />
+                    <Line type="monotone" dataKey="neutral" stroke="#eab308" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

@@ -23,11 +23,13 @@ interface Conversation {
 }
 
 interface ConversationListProps {
+  activeTab: string;
   selectedChat: number;
-  onSelectChat: (id: number) => void;
+  onSelectChat: (chatId: number) => void;
 }
 
 const ConversationList = ({
+  activeTab,
   selectedChat,
   onSelectChat,
 }: ConversationListProps) => {
@@ -61,7 +63,7 @@ const ConversationList = ({
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://localhost:3001", {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
@@ -122,47 +124,53 @@ const ConversationList = ({
   }, [selectedChat]);
 
   return (
-    <ScrollArea className="h-[calc(100vh-200px)]">
-      <div className="space-y-1 p-2">
+    <ScrollArea className="h-[calc(100vh-200px)]" dir="rtl">
+      <div className="space-y-1">
         {conversations.map((conversation) => (
           <button
             key={conversation.id}
             onClick={() => onSelectChat(conversation.id)}
-            className={`w-full p-3 rounded-lg transition-colors ${
+            className={`w-full py-5 px-2 rounded-lg transition-colors ${
               selectedChat === conversation.id
                 ? "bg-primary/10 hover:bg-primary/20"
                 : "hover:bg-accent"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {conversation.timestamp}
-                  </span>
-                  <h3 className="font-medium truncate">{conversation.name}</h3>
-                </div>
-                <div className="flex items-center justify-between">
-                  {conversation.unreadCount > 0 && (
-                    <span className="mr-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {conversation.unreadCount}
-                    </span>
-                  )}
-                  <p
-                    className={`text-sm truncate ${
-                      conversation.lastMessage.includes("سيء") ||
-                      conversation.lastMessage.includes("مزعج") ||
-                      conversation.lastMessage.includes("مخيب")
-                        ? "text-rose-600"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {conversation.lastMessage}
-                  </p>
-                </div>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold flex-shrink-0 text-sm">
                 {conversation.avatar}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center justify-between w-full">
+                    <h3 className="font-medium truncate text-right text-sm">
+                      {conversation.name}
+                    </h3>
+                    <span className="text-xs text-muted-foreground flex-shrink-0 mr-2">
+                      {conversation.timestamp}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between w-full">
+                    <p
+                      className={`text-xs truncate text-right ${
+                        conversation.lastMessage.includes("سيء") ||
+                        conversation.lastMessage.includes("مزعج") ||
+                        conversation.lastMessage.includes("مخيب")
+                          ? "text-rose-600"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {conversation.lastMessage || "لا توجد رسائل"}
+                    </p>
+                    {conversation.unreadCount > 0 && (
+                      <span className="bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0 mr-2 text-[10px]">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </button>

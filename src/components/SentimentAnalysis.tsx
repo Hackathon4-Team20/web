@@ -21,6 +21,7 @@ interface Message {
   sentiment: {
     score: number;
     label: string;
+    reason: string;
   };
 }
 
@@ -29,6 +30,15 @@ interface SentimentResult {
   label: string;
   color: string;
   icon: JSX.Element;
+  reason: string;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+  }>;
 }
 
 const arabicPositiveWords = [
@@ -100,12 +110,10 @@ const arabicNegativeWords = [
   "مستائين",
   "مستاءين",
   "مستاءات",
-  "مستاءات",
-  "مستاءات",
 ];
 
 const analyzeSentiment = (text: string): SentimentResult => {
-  const words = text.toLowerCase().split(/\s+/);
+  const words = text.split(/\s+/);
   let positiveCount = 0;
   let negativeCount = 0;
 
@@ -121,6 +129,7 @@ const analyzeSentiment = (text: string): SentimentResult => {
       label: "محايد",
       color: "bg-yellow-500",
       icon: <Minus className="h-4 w-4" />,
+      reason: "",
     };
   }
 
@@ -128,24 +137,27 @@ const analyzeSentiment = (text: string): SentimentResult => {
 
   if (score > 20) {
     return {
-      score,
+      score: Math.min(Math.abs(score), 100),
       label: "إيجابي",
       color: "bg-green-500",
       icon: <TrendingUp className="h-4 w-4" />,
+      reason: "",
     };
   } else if (score < -20) {
     return {
-      score,
+      score: Math.min(Math.abs(score), 100),
       label: "سلبي",
       color: "bg-red-500",
       icon: <TrendingDown className="h-4 w-4" />,
+      reason: "",
     };
   } else {
     return {
-      score,
+      score: Math.min(Math.abs(score), 100),
       label: "محايد",
       color: "bg-yellow-500",
       icon: <Minus className="h-4 w-4" />,
+      reason: "",
     };
   }
 };
@@ -153,6 +165,7 @@ const analyzeSentiment = (text: string): SentimentResult => {
 const getSentimentResult = (sentiment: {
   score: number;
   label: string;
+  reason: string;
 }): SentimentResult => {
   const getIcon = (label: string) => {
     switch (label) {
@@ -168,19 +181,24 @@ const getSentimentResult = (sentiment: {
   const getColor = (label: string) => {
     switch (label) {
       case "إيجابي":
-        return "bg-emerald-500";
+        return "bg-green-500";
       case "سلبي":
-        return "bg-rose-500";
+        return "bg-red-500";
       default:
         return "bg-yellow-500";
     }
   };
 
+  // Convert the score to a percentage for display
+  const displayScore = Math.abs(sentiment.score);
+  const normalizedScore = Math.min(displayScore, 100);
+
   return {
-    score: Math.abs(sentiment.score),
+    score: normalizedScore,
     label: sentiment.label,
     color: getColor(sentiment.label),
     icon: getIcon(sentiment.label),
+    reason: sentiment.reason,
   };
 };
 
@@ -191,12 +209,56 @@ const SentimentAnalysis = () => {
     label: "محايد",
     color: "bg-yellow-500",
     icon: <Minus className="h-4 w-4" />,
+    reason: "لا توجد رسائل",
   });
   const [socket, setSocket] = useState<Socket | null>(null);
 
+  // Calculate sentiment trends
+  const calculateSentimentTrends = (messages: Message[]) => {
+    const clientMessages = messages.filter(
+      (msg) => msg.sender === "client" && msg.sentiment
+    );
+
+    // Group messages by sentiment
+    const sentimentGroups = {
+      positive: clientMessages.filter((m) => m.sentiment.label === "إيجابي"),
+      neutral: clientMessages.filter((m) => m.sentiment.label === "محايد"),
+      negative: clientMessages.filter((m) => m.sentiment.label === "سلبي"),
+    };
+
+    // Calculate weighted scores
+    const positiveScore = sentimentGroups.positive.reduce(
+      (acc, curr) => acc + curr.sentiment.score,
+      0
+    );
+    const negativeScore = sentimentGroups.negative.reduce(
+      (acc, curr) => acc + Math.abs(curr.sentiment.score),
+      0
+    );
+    const neutralCount = sentimentGroups.neutral.length;
+
+    // Calculate overall sentiment
+    const totalMessages = clientMessages.length;
+    if (totalMessages === 0) return { score: 0, label: "محايد" };
+
+    const weightedScore = (positiveScore - negativeScore) / totalMessages;
+    const label =
+      weightedScore > 20 ? "إيجابي" : weightedScore < -20 ? "سلبي" : "محايد";
+
+    return {
+      score: Math.min(Math.abs(weightedScore), 100),
+      label,
+      trends: {
+        positive: sentimentGroups.positive.length,
+        neutral: neutralCount,
+        negative: sentimentGroups.negative.length,
+      },
+    };
+  };
+
   useEffect(() => {
     // Connect to Socket.IO server
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://localhost:3001", {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
@@ -229,15 +291,52 @@ const SentimentAnalysis = () => {
     );
 
     if (clientMessages.length > 0) {
-      // Calculate overall sentiment based on client messages only
-      const sentiments = clientMessages.map((msg) => msg.sentiment);
-      const totalScore = sentiments.reduce((acc, curr) => acc + curr.score, 0);
-      const averageScore = totalScore / clientMessages.length;
+      // Get all messages for comprehensive analysis
+      const allMessages = clientMessages;
+
+      // Calculate sentiment statistics
+      const sentimentStats = {
+        positive: allMessages.filter((msg) => msg.sentiment.label === "إيجابي")
+          .length,
+        negative: allMessages.filter((msg) => msg.sentiment.label === "سلبي")
+          .length,
+        neutral: allMessages.filter((msg) => msg.sentiment.label === "محايد")
+          .length,
+        total: allMessages.length,
+      };
+
+      // Calculate sentiment percentages
+      const percentages = {
+        positive: (sentimentStats.positive / sentimentStats.total) * 100,
+        negative: (sentimentStats.negative / sentimentStats.total) * 100,
+        neutral: (sentimentStats.neutral / sentimentStats.total) * 100,
+      };
+
+      // Determine dominant sentiment based on highest percentage
+      let dominantSentiment;
+      let sentimentScore;
+
+      if (
+        percentages.positive > percentages.negative &&
+        percentages.positive > percentages.neutral
+      ) {
+        dominantSentiment = "إيجابي";
+        sentimentScore = percentages.positive;
+      } else if (
+        percentages.negative > percentages.positive &&
+        percentages.negative > percentages.neutral
+      ) {
+        dominantSentiment = "سلبي";
+        sentimentScore = percentages.negative;
+      } else {
+        dominantSentiment = "محايد";
+        sentimentScore = percentages.neutral;
+      }
 
       const overallSentimentResult = getSentimentResult({
-        score: averageScore,
-        label:
-          averageScore > 20 ? "إيجابي" : averageScore < -20 ? "سلبي" : "محايد",
+        score: sentimentScore,
+        label: dominantSentiment,
+        reason: "",
       });
 
       setOverallSentiment(overallSentimentResult);
@@ -249,32 +348,32 @@ const SentimentAnalysis = () => {
     (msg) => msg.sender === "client" && msg.sentiment?.label === "سلبي"
   );
 
-  // Prepare data for the pie chart
+  // Prepare data for the pie chart with weighted values
   const pieData = [
     {
       name: "إيجابي",
-      value: messages.filter(
-        (m) => m.sender === "client" && m.sentiment?.label === "إيجابي"
-      ).length,
-      color: "#10b981", // emerald-500
+      value: messages
+        .filter((m) => m.sender === "client" && m.sentiment?.label === "إيجابي")
+        .reduce((acc, curr) => acc + Math.abs(curr.sentiment.score), 0),
+      color: "#22c55e", // green-500
     },
     {
       name: "محايد",
-      value: messages.filter(
-        (m) => m.sender === "client" && m.sentiment?.label === "محايد"
-      ).length,
+      value: messages
+        .filter((m) => m.sender === "client" && m.sentiment?.label === "محايد")
+        .reduce((acc, curr) => acc + Math.abs(curr.sentiment.score), 0),
       color: "#eab308", // yellow-500
     },
     {
       name: "سلبي",
-      value: messages.filter(
-        (m) => m.sender === "client" && m.sentiment?.label === "سلبي"
-      ).length,
-      color: "#f43f5e", // rose-500
+      value: messages
+        .filter((m) => m.sender === "client" && m.sentiment?.label === "سلبي")
+        .reduce((acc, curr) => acc + Math.abs(curr.sentiment.score), 0),
+      color: "#ef4444", // red-500
     },
   ];
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border rounded-lg p-2 shadow-lg">
@@ -302,12 +401,27 @@ const SentimentAnalysis = () => {
                 <span className="text-sm font-medium">الحالة العامة</span>
                 <div className="flex items-center gap-2">
                   {overallSentiment.icon}
-                  <span className="text-sm">{overallSentiment.label}</span>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={`text-sm font-medium ${
+                        overallSentiment.label === "إيجابي"
+                          ? "text-green-500"
+                          : overallSentiment.label === "سلبي"
+                          ? "text-red-500"
+                          : "text-yellow-500"
+                      }`}
+                    >
+                      {overallSentiment.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({Math.round(overallSentiment.score)}%)
+                    </span>
+                  </div>
                 </div>
               </div>
               <Progress
                 value={Math.abs(overallSentiment.score)}
-                className={overallSentiment.color}
+                className={`${overallSentiment.color} [&>div]:${overallSentiment.color}`}
               />
             </div>
 
@@ -368,6 +482,9 @@ const SentimentAnalysis = () => {
                             </div>
                           </div>
                           <p className="text-sm">{message.text}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {sentiment.reason}
+                          </p>
                           <div className="mt-2">
                             <Progress
                               value={Math.abs(message.sentiment.score)}

@@ -3,15 +3,13 @@ import { Send, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { io, Socket } from "socket.io-client";
+import axios from "axios";
 
 interface Message {
   id: number;
   text: string;
   sender: string;
   timestamp: string;
-  sentiment?: {
-    label: string;
-  };
 }
 
 const ClientChat = () => {
@@ -23,7 +21,7 @@ const ClientChat = () => {
 
   useEffect(() => {
     // Connect to WebSocket server
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io("http://localhost:3001", {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       transports: ["websocket", "polling"],
@@ -69,14 +67,31 @@ const ClientChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim() && socket && isConnected) {
-      console.log("Sending message:", message);
-      socket.emit("send-message", {
-        text: message,
-        sender: "client",
-      });
-      setMessage("");
+      try {
+        // Send message to AI model server for sentiment analysis (silently)
+        await axios.post("http://127.0.0.1:5002/track", {
+          message: message,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Send message to WebSocket server
+        socket.emit("send-message", {
+          text: message,
+          sender: "client",
+        });
+
+        setMessage("");
+      } catch (error) {
+        console.error("Error analyzing sentiment:", error);
+        // Still send the message even if sentiment analysis fails
+        socket.emit("send-message", {
+          text: message,
+          sender: "client",
+        });
+        setMessage("");
+      }
     }
   };
 
